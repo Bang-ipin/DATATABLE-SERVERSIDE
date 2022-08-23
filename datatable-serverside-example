@@ -1,0 +1,62 @@
+public function showData(Request $request){
+        $date1                          = $request->date1 ?? date('Y-m-d');
+        $date2                          = $request->date2 ?? date('Y-m-d');
+        $total                          = DB::table('table')->whereBetween('column', [$date1, $date2])->get()->count();
+
+        $length                         = intval($_REQUEST['length']);
+        $length                         = $length < 0 ? $total : $length;
+        $start                          = intval($_REQUEST['start']);
+        $draw                           = intval($_REQUEST['draw']);
+
+        $search                         = $_REQUEST['search']["value"];
+
+        $output                         = array();
+        $output['data']                 = array();
+
+        $end                            = $start + $length;
+        $end                            = $end > $total ? $total : $end;
+
+        if($search != ''){
+            $query                         = DB::table('table')
+                                            ->whereBetween('column', [$date1, $date2])
+                                            ->where(function($filter) use ($search) {
+                                                $filter->orWhere('column', 'like', '%' . $search . '%');
+                                            })
+                                            ->get();
+            $no = $start + 1;
+            foreach ($query as $val) {
+                $output['data'][] =
+                    array(
+                        $no,
+                        $val->column1,
+                        $val->column2,
+                    );
+                $no++;
+            }
+            $output['draw']                 = $draw;
+            $output['recordsTotal']         = $query->count();
+            $output['recordsFiltered']      = $query->count();
+        }
+        else{
+            $query                         = DB::table('table')
+                                                ->whereBetween('column', [$date1, $date2])
+                                                ->take($length)
+                                                ->skip($start)
+                                                ->get();
+            $no = $start + 1;
+            foreach ($query as $val) {
+                $output['data'][] =
+                    array(
+                        $no,
+                        $val->column1,
+                        $val->column2,
+                    );
+                $no++;
+            }
+            $output['draw']             = $draw;
+            $output['recordsTotal']     = $total;
+            $output['recordsFiltered']  = $total;
+        }
+                                                    
+        return response()->json($output);
+    }
