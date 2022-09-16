@@ -22,6 +22,8 @@ public function showData(Request $request){
                                             ->where(function($filter) use ($search) {
                                                 $filter->orWhere('column', 'like', '%' . $search . '%');
                                             })
+                                            ->take($length)
+                                            ->skip($start)
                                             ->get();
             $no = $start + 1;
             foreach ($query as $val) {
@@ -33,9 +35,14 @@ public function showData(Request $request){
                     );
                 $no++;
             }
+             $rows                         = DB::table('table')
+                                                    ->whereBetween('column', [$date1, $date2])
+                                                    ->where(function($filter) use ($search) {
+                                                        $filter->orWhere('column', 'like', '%' . $search . '%');
+                                                    })
+                                                    ->get();
             $output['draw']                 = $draw;
-            $output['recordsTotal']         = $query->count();
-            $output['recordsFiltered']      = $query->count();
+            $output['recordsTotal']         = $output['recordsFiltered']      = $rows->count();
         }
         else{
             $query                         = DB::table('table')
